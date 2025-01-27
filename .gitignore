@@ -1,3 +1,13 @@
 *.onnx
 build/
 _conan/
+onnx_env/
+**/onnx_env/
+*.txt
+*.log
+*.out
+*.err
+*.pyc
+*.pyo
+*.pyd
+*.py

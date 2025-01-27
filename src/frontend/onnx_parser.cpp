@@ -65,6 +65,7 @@ namespace mytvm {
         print_onnx_model(model);
 
         std::unordered_map<std::string, std::shared_ptr<relay::RelayVar>> input2relayVars;
+        std::unordered_map<std::string, std::shared_ptr<relay::RelayExpr>> output2relayExprs;
         // iterate over input nodes
         for(const auto& input : model.graph().input()) {
             std::string input_name = input.name();
@@ -74,8 +75,8 @@ namespace mytvm {
                 input_shape.push_back(dim.dim_value());
             }
 
-            relay::Type inputVarType;
-            inputVarType = relay::TensorType(input_shape, relay::PrimType::kFloat);
+            std::shared_ptr<relay::Type> inputVarType = 
+                std::make_shared<relay::TensorType>(input_shape, relay::PrimType::kFloat);
             std::shared_ptr<relay::RelayVar> inputVar = relay::RelayVar::create(input_name, inputVarType);
             input2relayVars[input_name] = inputVar;
         }
@@ -88,11 +89,12 @@ namespace mytvm {
                 initializer_shape.push_back(dim);
             }
 
-            relay::Type initializerVarType;
-            initializerVarType = relay::TensorType(initializer_shape, relay::PrimType::kFloat);
+            std::shared_ptr<relay::Type> initializerVarType;
+            initializerVarType = std::make_shared<relay::TensorType>(initializer_shape, relay::PrimType::kFloat);
             std::shared_ptr<relay::RelayVar> initializerVar = relay::RelayVar::create(initializer_name, initializerVarType);
             input2relayVars[initializer_name] = initializerVar;
         }
+
 
         // iterate over nodes
         for(auto node : model.graph().node()) {
@@ -105,13 +107,15 @@ namespace mytvm {
             relay::OperatorRegistry* converter = relay::OperatorRegistry::get_instance();
             std::vector<std::shared_ptr<relay::RelayExpr>> output = converter->convertNode(node, args);
 
+
             // assert that the number of outputs is the same as the number of outputs in the node
             #ifdef NDEBUG
             assert(output.size() == node.output_size());
             #endif
 
             for(int i = 0; i < output.size(); i++) {
-                input2relayVars[node.output(i)] = std::dynamic_pointer_cast<relay::RelayVar>(output[i]);
+                std::string output_name = node.output(i);
+                output2relayExprs[output_name] = output[i];
             }
 
         }
@@ -120,8 +124,7 @@ namespace mytvm {
         // iterate over outputs
         for(const auto& output : model.graph().output()) {
             std::string output_name = output.name();
-            std::shared_ptr<relay::RelayVar> outputVar = input2relayVars[output_name];
-            outputs.push_back(outputVar);
+            outputs.push_back(output2relayExprs[output_name]);
         }
 
         std::vector<std::shared_ptr<relay::RelayExpr>> params;
@@ -139,7 +142,7 @@ namespace mytvm {
         }
         std::shared_ptr<relay::RelayFunction> relayFunction = relay::RelayFunction::create(params, body, "main");
 
-        relayFunction->print();
+        relayFunction->print(std::cout);
 
         return;
 
