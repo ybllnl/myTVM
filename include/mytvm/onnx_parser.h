@@ -3,10 +3,11 @@
 
 #include <string>
 #include "mytvm/relay/relay_include.h"
+#include "mytvm/relay/module.h"
 #include "onnx/onnx.pb.h"
 
 namespace mytvm {
-    void parse_onnx_model(const std::string& model_path);
+    IRModule parse_onnx_model(const std::string& model_path);
     void print_onnx_model(onnx::ModelProto& model);
 }
 

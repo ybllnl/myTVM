@@ -3,6 +3,7 @@
 #include "mytvm/relay/operator_registry.h"
 #include "mytvm/relay/relay_include.h"
 #include "mytvm/relay/type.h"
+#include "mytvm/relay/module.h"
 
 #include <iostream>
 #include <fstream>
@@ -47,19 +48,19 @@ namespace mytvm {
         }
         return;
     }
-    void parse_onnx_model(const std::string& model_path) {
+    IRModule parse_onnx_model(const std::string& model_path) {
         onnx::ModelProto model;
         std::cout << "Parsing ONNX model: " << model_path << std::endl;
 
         std::ifstream model_file(model_path, std::ios::binary);
         if(!model_file) {
             std::cerr << "Failed to open model file: " << model_path << std::endl;
-            return;
+            exit(1);
         }
 
         if(!model.ParseFromIstream(&model_file)) {
             std::cerr << "Failed to parse ONNX model" << std::endl;
-            return;
+            exit(1);
         }
 
         print_onnx_model(model);
@@ -144,7 +145,10 @@ namespace mytvm {
 
         relayFunction->print(std::cout);
 
-        return;
+        IRModule irModule;
+        irModule.functions["main"] = relayFunction;
+
+        return irModule;
 
         
     }

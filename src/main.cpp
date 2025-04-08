@@ -1,5 +1,7 @@
 #include <iostream>
 #include "mytvm/onnx_parser.h"
+#include "mytvm/relay/module.h"
+#include "mytvm/relay/transform.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -7,6 +9,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    mytvm::parse_onnx_model(argv[1]);
+    mytvm::IRModule module = mytvm::parse_onnx_model(argv[1]);
+    mytvm::transform::PassContext pass_ctx = mytvm::transform::PassContext::Create();
     return 0;
 }
